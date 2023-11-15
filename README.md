@@ -1,1 +1,1 @@
-# radio-receiver
+# RTL-SDR FM radio receiver
