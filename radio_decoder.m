@@ -117,10 +117,6 @@ player = audioDeviceWriter(f_samp_audio);
 %% RTL-SDR receiver setup
 rxsdr = comm.SDRRTLReceiver("CenterFrequency", f_carr, 'SampleRate', f_samp, 'SamplesPerFrame', buffer_size, 'OutputDataType', 'double','EnableTunerAGC', false, 'TunerGain', 40);
 
-% % load signal from file
-% load 'FM_recording.mat';
-% y = [y; zeros(buffer_size-mod(length(y), buffer_size), 1)].';
-
 %% Main loop setup
 prev_buffer = zeros(1, buffer_size+1);
 first_iter = true;
@@ -130,7 +126,6 @@ first_iter = true;
 while (true)
     %% Reading iq samples (double buffer)
     current_buffer = rxsdr().';
-    % current_buffer = y(i : i + buffer_size-1);
     buffer = [prev_buffer, current_buffer];
     prev_buffer = [prev_buffer(end), current_buffer];
 
