@@ -1,3 +1,0 @@
-/home/piotr/Desktop/radio-receiver/build/CMakeFiles/radio-receiver.dir
-/home/piotr/Desktop/radio-receiver/build/CMakeFiles/edit_cache.dir
-/home/piotr/Desktop/radio-receiver/build/CMakeFiles/rebuild_cache.dir
