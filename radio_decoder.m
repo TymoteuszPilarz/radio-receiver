@@ -122,7 +122,6 @@ prev_buffer = zeros(1, buffer_size+1);
 first_iter = true;
 
 %% Main loop
-% for i = 1:buffer_size:length(y)
 while (true)
     %% Reading iq samples (double buffer)
     current_buffer = rxsdr().';
