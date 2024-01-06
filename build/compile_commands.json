@@ -1,0 +1,20 @@
+[
+{
+  "directory": "/home/piotr/Desktop/radio-receiver/build",
+  "command": "/usr/bin/g++ -g -std=gnu++20 -o CMakeFiles/radio-receiver.dir/src/main.cpp.o -c /home/piotr/Desktop/radio-receiver/src/main.cpp",
+  "file": "/home/piotr/Desktop/radio-receiver/src/main.cpp",
+  "output": "CMakeFiles/radio-receiver.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/piotr/Desktop/radio-receiver/build",
+  "command": "/usr/bin/g++ -g -std=gnu++20 -o CMakeFiles/radio-receiver.dir/src/RtlSdrReceiver.cpp.o -c /home/piotr/Desktop/radio-receiver/src/RtlSdrReceiver.cpp",
+  "file": "/home/piotr/Desktop/radio-receiver/src/RtlSdrReceiver.cpp",
+  "output": "CMakeFiles/radio-receiver.dir/src/RtlSdrReceiver.cpp.o"
+},
+{
+  "directory": "/home/piotr/Desktop/radio-receiver/build",
+  "command": "/usr/bin/g++ -g -std=gnu++20 -o CMakeFiles/radio-receiver.dir/src/RDSDecoder.cpp.o -c /home/piotr/Desktop/radio-receiver/src/RDSDecoder.cpp",
+  "file": "/home/piotr/Desktop/radio-receiver/src/RDSDecoder.cpp",
+  "output": "CMakeFiles/radio-receiver.dir/src/RDSDecoder.cpp.o"
+}
+]
