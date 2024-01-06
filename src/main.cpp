@@ -1,21 +1,27 @@
 #include <iostream>
+#include <complex>
+#include <vector>
 
 #include "RtlSdrReceiver.h"
 
-const int numberOfFrames = 5000;
+constexpr std::size_t bufferSize = 32768;
+constexpr int frequency = 105900000;
+constexpr float gain = 40.f;
+constexpr int numberOfFrames = 5000;
 
 int main()
 {
     try
     {
-        RtlSdrReceiver rtlSdrReceiver(0, 96e6, 250000, pow(2, 10), 40);
+        std::vector<std::complex<float>> iqBuffer(bufferSize);
+        RtlSdrReceiver<bufferSize> rtlSdrReceiver(iqBuffer, frequency, false, gain);
 
-        for (int i = 0; i < numberOfFrames; i++)
+        for (auto i = 0; i < numberOfFrames; i++)
         {
-            auto res = rtlSdrReceiver.ReadIQData();
-            for (auto it = res.first; it != res.second; it++)
+            rtlSdrReceiver.ReadIQData();
+            for (const auto& elem : iqBuffer)
             {
-                std::cout << it->real() << " " << it->imag() << '\n';
+                std::cout << elem.real() << " " << elem.imag() << '\n';
             }
             std::cout << std::endl;
         }

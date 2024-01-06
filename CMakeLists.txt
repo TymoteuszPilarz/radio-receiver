@@ -3,8 +3,7 @@ project(radio-receiver)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(radio-receiver src/main.cpp src/RtlSdrReceiver.cpp src/RtlSdrReceiver.h)
+add_executable(radio-receiver src/main.cpp)
 
-target_include_directories(radio-receiver PRIVATE /usr/local/include)
-target_link_libraries(radio-receiver PRIVATE /usr/local/lib/librtlsdr.so)
-
+target_include_directories(radio-receiver PRIVATE /opt/homebrew/include)
+target_link_libraries(radio-receiver PRIVATE /opt/homebrew/lib/librtlsdr.dylib)
