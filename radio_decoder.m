@@ -6,7 +6,7 @@ clear all;
 %% Receiver parameters
 audio_mode = 1; % Audio mode: 0 - off, 1 - mono, 2 - stereo
 
-f_carr = 105.9e6;
+f_carr = 96e6;
 f_samp = 250e3;
 f_samp_audio = 25e3;
 
@@ -101,18 +101,17 @@ syndrome_Ca = [1, 0, 0, 1, 0, 1, 1, 1, 0, 0];
 syndrome_Cb = [1, 1, 1, 1, 0, 0, 1, 1, 0, 0];
 syndrome_D = [1, 0, 0, 1, 0, 1, 1, 0, 0, 0];
 
-programme_name = blanks(4);
-radio_text1 = blanks(64);
-radio_text2 = blanks(64);
-radio_text_buffer1 = blanks(64);
-radio_text_buffer2 = blanks(64);
+programme_name = blanks(8);
+radio_text = blanks(64);
 
 %% PLL initial parameters
 last_theta = 0;
 last_omega = 2 * pi * f_pilot / f_samp;
 
 %% Audio player setup
-player = audioDeviceWriter(f_samp_audio);
+if (audio_mode ~= 0)
+    player = audioDeviceWriter(f_samp_audio);
+end
 
 %% RTL-SDR receiver setup
 rxsdr = comm.SDRRTLReceiver("CenterFrequency", f_carr, 'SampleRate', f_samp, 'SamplesPerFrame', buffer_size, 'OutputDataType', 'double','EnableTunerAGC', false, 'TunerGain', 40);
@@ -241,12 +240,12 @@ while (true)
                 if (syndrome == syndrome_Ca)
                     syndrome = calc_syndrome(n+78, rds_bits, check);
                     if (syndrome == syndrome_D)
-                        [programme_name, radio_text1, radio_text2, radio_text_buffer1, radio_text_buffer2] = process_rds(n, rds_bits, programme_name, radio_text1, radio_text2, radio_text_buffer1, radio_text_buffer2);
+                        [programme_name, radio_text] = process_rds(n, rds_bits, programme_name, radio_text);
                     end
                 elseif (syndrome == syndrome_Cb)
                     syndrome = calc_syndrome(n+78, rds_bits, check);
                     if (syndrome == syndrome_D)
-                        [programme_name, radio_text1, radio_text2, prev_AB_flag] = process_rds(n, rds_bits, programme_name, radio_text1, radio_text2, prev_AB_flag);
+                        [programme_name, radio_text] = process_rds(n, rds_bits, programme_name, radio_text);
                     end
                 end
             end
@@ -256,8 +255,7 @@ while (true)
     %% Show RDS data
     clc;
     disp(['Programme name: ', programme_name]);
-    disp(['Radio text 1: ', radio_text1]);
-    disp(['Radio text 2: ', radio_text2]);
+    disp(['Radio text: ', radio_text]);
 
     %% Play audio
     if (audio_mode == 1)
@@ -277,7 +275,7 @@ function result = calc_syndrome(n, rds_bits, check)
     end
 end
 
-function [programme_name, radio_text1, radio_text2, radio_text_buffer1, radio_text_buffer2] = process_rds(n, rds_bits, programme_name, radio_text1, radio_text2, radio_text_buffer1, radio_text_buffer2)
+function [programme_name, radio_text] = process_rds(n, rds_bits, programme_name, radio_text)
     block_A = rds_bits(n:n+25);
     block_B = rds_bits(n+26:n+51);
     block_C = rds_bits(n+52:n+77);
@@ -287,27 +285,70 @@ function [programme_name, radio_text1, radio_text2, radio_text_buffer1, radio_te
 
     % Group 0A or 0B
     if (type(1:4) == [0, 0, 0, 0])
+        persistent programme_name_buffer;
+        if isempty(programme_name_buffer)
+            programme_name_buffer = blanks(64);
+        end
+
+        persistent prev_name_seg;
+        if isempty(prev_name_seg)
+            prev_name_seg = -1;
+        end
+        
         name_seg = block_B(15:16);
+        first_indx = name_seg(1) * 4 + name_seg(2) * 2 + 1;
+        name_seg = bin2dec(num2str(block_B(15:16)));
+
+        if name_seg ~= 0 && name_seg ~= prev_name_seg && name_seg ~= prev_name_seg + 1
+            prev_name_seg = -1;
+            return;
+        else
+            prev_name_seg = name_seg;
+        end
 
         ascii1 = block_D(1:8);
         ascii2 = block_D(9:16);
 
-        char1 = bin_to_char(ascii1);
-        char2 = bin_to_char(ascii2);
+        char1 = char(bin2dec(num2str(ascii1)));
+        char2 = char(bin2dec(num2str(ascii2)));
 
-        if name_seg == [0, 0]
-            programme_name(1:2) = [char1, char2];
-        elseif name_seg == [0, 1]
-            programme_name(3:4) = [char1, char2];
-        elseif name_seg == [1, 0]
-            programme_name(5:6) = [char1, char2];
-        elseif name_seg == [1, 1]
-            programme_name(7:8) = [char1, char2];
+        chars = [char1, char2];
+
+        programme_name_buffer(first_indx : first_indx+1) = chars;
+
+        if (name_seg == 3)
+            programme_name = programme_name_buffer;
         end
 
     % Group 2A
     elseif (type == [0 0 1 0 0])
+        persistent radio_text_buffer;
+        if isempty(radio_text_buffer)
+            radio_text_buffer = blanks(64);
+        end
+
+        persistent prev_text_seg;
+        if isempty(prev_text_seg)
+            prev_text_seg = -1;
+        end
+
+        persistent prev_AB_flag;
+        if isempty(prev_AB_flag)
+            prev_AB_flag = -1;
+        end
+
         text_seg = block_B(13:16);
+        first_indx = (text_seg(1) * 8 + text_seg(2) * 4 + text_seg(3) * 2 + text_seg(4)) * 4 + 1;
+        text_seg = bin2dec(num2str(text_seg));
+
+        if (text_seg ~= 0 && text_seg ~= prev_text_seg && text_seg ~= prev_text_seg + 1)
+            prev_text_seg = -1;
+            prev_AB_flag = -1;
+            return
+        else
+            prev_text_seg = text_seg;
+        end
+
         AB_flag = block_B(12);
         
         ascii1 = block_C(1:8);
@@ -315,27 +356,22 @@ function [programme_name, radio_text1, radio_text2, radio_text_buffer1, radio_te
         ascii3 = block_D(1:8);
         ascii4 = block_D(9:16);
         
-        char1 = bin_to_char(ascii1);
-        char2 = bin_to_char(ascii2);
-        char3 = bin_to_char(ascii3);
-        char4 = bin_to_char(ascii4);
+        char1 = char(bin2dec(num2str(ascii1)));
+        char2 = char(bin2dec(num2str(ascii2)));
+        char3 = char(bin2dec(num2str(ascii3)));
+        char4 = char(bin2dec(num2str(ascii4)));
 
         chars = [char1 char2 char3 char4];
-        
-        first = (text_seg(1) * 8 + text_seg(2) * 4 + text_seg(3) * 2 + text_seg(4)) * 4 + 1;
 
-        if AB_flag == 0
-            radio_text_buffer1(first:first+3) = chars;
-            radio_text2 = radio_text_buffer2;
-        else
-            radio_text_buffer2(first:first+3) = chars;
-            radio_text1 = radio_text_buffer1;
+        if AB_flag ~= prev_AB_flag
+            radio_text_buffer = blanks(64);
+            prev_AB_flag = AB_flag;
+        end
+
+        radio_text_buffer(first_indx:first_indx+3) = chars;
+
+        if text_seg == 15
+            radio_text = radio_text_buffer;
         end
     end
-end
-
-function result = bin_to_char(bin_vect)
-    str = mat2str(bin_vect);
-    str = [str(2), str(4), str(6), str(8), str(10), str(12), str(14), str(16)];
-    result = char(bin2dec(str));
 end
